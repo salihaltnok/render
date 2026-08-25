@@ -17,6 +17,7 @@ const initDatabase = () => {
       filename VARCHAR(255) NOT NULL,
       originalname VARCHAR(255) NOT NULL,
       status VARCHAR(50) DEFAULT 'pending',
+      converted_name VARCHAR(255) DEFAULT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;
@@ -25,7 +26,7 @@ const initDatabase = () => {
     if (err) {
       console.error("Tablo oluşturulamadı:", err);
     } else {
-      console.log("MySQL 'videos' tablosu hazır.");
+      console.log("MySQL 'videos' tablosu eksiksiz hazır.");
     }
   });
 };

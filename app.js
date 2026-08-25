@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const dotenv = require("dotenv");
+dotenv.config();
 const path = require("path");
 const multer = require("multer");
 const ffmpeg = require("fluent-ffmpeg");
@@ -11,8 +12,6 @@ const db = require("./database");
 const converters = require("./converters");
 const startCleanupJob = require("./cleanup");
 const logger = require("./logger");
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);

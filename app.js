@@ -135,7 +135,8 @@ app.post("/upload", upload.single("video"), async (req, res) => {
   const { format, resolution, socketId } = req.body;
   const filename = req.file.filename;
   const originalName = req.file.originalname;
-  const outputFilename = `${Date.now()}-converted.${format}`;
+  const fileExtension = format === "thumbnail" ? "jpg" : format;
+  const outputFilename = `${Date.now()}-converted.${fileExtension}`;
 
   try {
     const [result] = await db.query(

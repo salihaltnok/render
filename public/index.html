@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sinyal Dönüştürücü — VC-8</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #171310;
+        --bg-vignette: #0d0b09;
+        --panel: #221b15;
+        --panel-raised: #2b2219;
+        --metal: #4a4032;
+        --metal-hi: #5f5340;
+        --seam: #0f0c09;
+        --phosphor: #ffb454;
+        --phosphor-dim: #8a5f2c;
+        --signal: #5eead4;
+        --rec: #e2523d;
+        --rec-hi: #ff6b52;
+        --text: #f2e8d8;
+        --text-dim: #a9987f;
+        --text-faint: #6f6152;
+        --radius: 10px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px;
+        font-family: "IBM Plex Sans", sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+          ellipse at 50% -10%,
+          #241d16 0%,
+          var(--bg) 55%,
+          var(--bg-vignette) 100%
+        );
+        background-attachment: fixed;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.015) 0px,
+          rgba(255, 255, 255, 0.015) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        mix-blend-mode: overlay;
+        opacity: 0.5;
+      }
+
+      .unit {
+        position: relative;
+        width: 100%;
+        max-width: 620px;
+        background: linear-gradient(
+          180deg,
+          var(--metal-hi),
+          var(--metal) 6%,
+          var(--metal) 94%,
+          var(--metal-hi)
+        );
+        border-radius: 16px;
+        padding: 4px;
+        box-shadow:
+          0 30px 60px -20px rgba(0, 0, 0, 0.7),
+          0 2px 0 rgba(255, 255, 255, 0.08) inset,
+          0 -2px 0 rgba(0, 0, 0, 0.5) inset;
+      }
+
+      .rivet {
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #7a6c54, #241d15 70%);
+        box-shadow:
+          0 1px 1px rgba(0, 0, 0, 0.6),
+          0 -1px 0 rgba(255, 255, 255, 0.15) inset;
+        z-index: 3;
+      }
+      .rivet--tl {
+        top: 12px;
+        left: 12px;
+      }
+      .rivet--tr {
+        top: 12px;
+        right: 12px;
+      }
+      .rivet--bl {
+        bottom: 12px;
+        left: 12px;
+      }
+      .rivet--br {
+        bottom: 12px;
+        right: 12px;
+      }
+
+      .unit__inner {
+        background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+        border-radius: 13px;
+        padding: 34px 30px 26px;
+        border: 1px solid var(--seam);
+      }
+
+      .nameplate {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        padding-bottom: 18px;
+        margin-bottom: 26px;
+      }
+      .nameplate__brand {
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.22em;
+        color: var(--text-dim);
+        text-transform: uppercase;
+      }
+      .nameplate__brand b {
+        color: var(--phosphor);
+        font-weight: 700;
+      }
+      .nameplate__model {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--text-faint);
+        letter-spacing: 0.1em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .power-led {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--signal);
+        box-shadow: 0 0 6px 1px var(--signal);
+        animation: blink 3.2s ease-in-out infinite;
+      }
+      @keyframes blink {
+        0%,
+        92%,
+        100% {
+          opacity: 1;
+        }
+        95% {
+          opacity: 0.25;
+        }
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .module__label {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .module__num {
+        font-size: 10px;
+        color: var(--bg);
+        background: var(--phosphor-dim);
+        border-radius: 3px;
+        padding: 1px 5px;
+        letter-spacing: 0.05em;
+      }
+
+      .dropzone {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1.5px dashed rgba(255, 180, 84, 0.28);
+        background: repeating-linear-gradient(
+          135deg,
+          rgba(0, 0, 0, 0.15) 0 8px,
+          rgba(0, 0, 0, 0.05) 8px 16px
+        );
+        border-radius: 8px;
+        padding: 16px 18px;
+        cursor: pointer;
+        transition:
+          border-color 0.2s ease,
+          background-color 0.2s ease;
+      }
+      .dropzone:hover,
+      .dropzone:focus-visible {
+        border-color: var(--phosphor);
+        outline: none;
+      }
+      .dropzone.is-drag {
+        border-color: var(--signal);
+        background-color: rgba(94, 234, 212, 0.06);
+      }
+      .dropzone.has-file {
+        border-style: solid;
+        border-color: var(--signal);
+      }
+      .reel {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 3px solid var(--text-faint);
+        position: relative;
+        display: grid;
+        place-items: center;
+      }
+      .reel::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-faint);
+      }
+      .dropzone__text {
+        font-size: 14px;
+        color: var(--text-dim);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .dropzone__text .link {
+        color: var(--phosphor);
+        text-decoration: underline;
+      }
+      .dropzone__text.is-file {
+        color: var(--text);
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+      }
+
+      .patchbay {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .patch {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        background: linear-gradient(180deg, #33291d, #221b14);
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        border-top-color: rgba(255, 255, 255, 0.06);
+        border-radius: 6px;
+        padding: 9px 6px 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.02em;
+        text-align: center;
+        line-height: 1.2;
+        transition:
+          color 0.15s ease,
+          transform 0.05s ease;
+      }
+      .patch:active {
+        transform: translateY(1px);
+      }
+      .patch:focus-visible {
+        outline: 2px solid var(--signal);
+        outline-offset: 2px;
+      }
+      .patch__led {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #4a3d2c;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6) inset;
+        transition:
+          background 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .patch.is-active {
+        color: var(--text);
+        box-shadow: 0 0 0 1px var(--phosphor) inset;
+      }
+      .patch.is-active .patch__led {
+        background: var(--phosphor);
+        box-shadow: 0 0 6px 1px var(--phosphor);
+      }
+
+      .scope {
+        position: relative;
+        height: 88px;
+        border-radius: 8px;
+        background: #0a1210;
+        border: 1px solid #050a08;
+        box-shadow:
+          0 0 0 1px rgba(0, 0, 0, 0.4),
+          inset 0 2px 10px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+      }
+      .scope__grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          repeating-linear-gradient(
+            0deg,
+            rgba(94, 234, 212, 0.06) 0 1px,
+            transparent 1px 22px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            rgba(94, 234, 212, 0.06) 0 1px,
+            transparent 1px 22px
+          );
+      }
+      .scope__wave {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 200%;
+        height: 60px;
+        transform: translateY(-50%);
+        animation: scroll-wave 5s linear infinite;
+      }
+      @keyframes scroll-wave {
+        from {
+          transform: translateY(-50%) translateX(0);
+        }
+        to {
+          transform: translateY(-50%) translateX(-50%);
+        }
+      }
+      .scope__wave path {
+        stroke: var(--signal);
+        stroke-width: 1.6;
+        fill: none;
+        filter: drop-shadow(0 0 3px rgba(94, 234, 212, 0.7));
+        opacity: 0.85;
+      }
+      .scope.is-idle .scope__wave {
+        animation-duration: 9s;
+        opacity: 0.35;
+      }
+      .scope.is-processing .scope__wave {
+        animation-duration: 1.4s;
+      }
+      .scope.is-processing .scope__wave path {
+        stroke: var(--phosphor);
+        filter: drop-shadow(0 0 4px rgba(255, 180, 84, 0.8));
+      }
+
+      .scope__scan {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.05),
+          transparent
+        );
+        animation: sweep 3.6s linear infinite;
+      }
+      @keyframes sweep {
+        0% {
+          transform: translateY(-100%);
+        }
+        100% {
+          transform: translateY(280%);
+        }
+      }
+
+      .scope__readout {
+        position: absolute;
+        left: 10px;
+        bottom: 7px;
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: var(--signal);
+        text-shadow: 0 0 6px rgba(94, 234, 212, 0.6);
+        z-index: 2;
+      }
+      .scope__readout.is-processing {
+        color: var(--phosphor);
+        text-shadow: 0 0 6px rgba(255, 180, 84, 0.6);
+      }
+      .scope__readout.is-error {
+        color: var(--rec-hi);
+        text-shadow: 0 0 6px rgba(226, 82, 61, 0.6);
+      }
+
+      .vu {
+        display: none;
+        position: relative;
+        height: 14px;
+        border-radius: 4px;
+        background: #0a0a0a;
+        border: 1px solid rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
+      }
+      .vu__ticks {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        z-index: 2;
+        pointer-events: none;
+      }
+      .vu__ticks span {
+        flex: 1;
+        border-right: 1px solid rgba(0, 0, 0, 0.55);
+      }
+      .vu__fill {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--phosphor-dim),
+          var(--phosphor) 70%,
+          var(--rec-hi)
+        );
+        transition: width 0.35s ease;
+      }
+
+      .recbtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #5c1c14;
+        background: linear-gradient(
+          180deg,
+          var(--rec-hi),
+          var(--rec) 60%,
+          #b23c2a
+        );
+        color: #fff5f0;
+        font-family: "Space Mono", monospace;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow:
+          0 3px 0 #7a2418,
+          0 8px 16px -6px rgba(226, 82, 61, 0.5);
+        transition:
+          transform 0.08s ease,
+          box-shadow 0.08s ease,
+          opacity 0.2s ease;
+      }
+      .recbtn:hover {
+        filter: brightness(1.05);
+      }
+      .recbtn:active {
+        transform: translateY(2px);
+        box-shadow: 0 1px 0 #7a2418;
+      }
+      .recbtn:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        background: linear-gradient(180deg, #55483a, #3a3229);
+        box-shadow: 0 3px 0 #241d16;
+        border-color: #241d16;
+      }
+      .recbtn__dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8);
+      }
+      .recbtn:disabled .recbtn__dot {
+        animation: pulse 1s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      .message {
+        margin-top: 4px;
+        min-height: 18px;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.03em;
+        text-align: center;
+      }
+      .message .warn {
+        color: #f0a94e;
+      }
+      .message .err {
+        color: var(--rec-hi);
+      }
+      .message .ok {
+        color: var(--signal);
+      }
+      .message a {
+        color: var(--phosphor);
+        text-decoration: none;
+        border-bottom: 1px solid var(--phosphor);
+        padding-bottom: 1px;
+      }
+      .message a:hover {
+        color: var(--rec-hi);
+        border-color: var(--rec-hi);
+      }
+
+      @media (max-width: 480px) {
+        .unit__inner {
+          padding: 26px 18px 20px;
+        }
+        .patchbay {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .nameplate {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="unit">
+      <div class="rivet rivet--tl"></div>
+      <div class="rivet rivet--tr"></div>
+      <div class="rivet rivet--bl"></div>
+      <div class="rivet rivet--br"></div>
+
+      <div class="unit__inner">
+        <div class="nameplate">
+          <span class="nameplate__brand"><b>SİNYAL</b> DÖNÜŞTÜRME ÜNİTESİ</span>
+          <span class="nameplate__model"
+            ><span class="power-led"></span>MODEL VC-8</span
+          >
+        </div>
+
+        <form id="uploadForm">
+          <section>
+            <div class="module__label">
+              <span class="module__num">IN</span>Giriş Sinyali
+            </div>
+            <label class="dropzone" id="dropzone" tabindex="0">
+              <input
+                type="file"
+                id="videoFile"
+                name="video"
+                accept="video/*"
+                required
+                hidden
+              />
+              <span class="reel" aria-hidden="true"></span>
+              <span class="dropzone__text" id="dropzoneText"
+                >Dosyayı sürükleyin ya da <span class="link">seçin</span></span
+              >
+            </label>
+          </section>
+          <section>
+            <div class="module__label">
+              <span class="module__num">RES</span>Çözünürlük
+            </div>
+            <div class="patchbay" id="resPatchbay">
+              <button
+                type="button"
+                class="patch is-active"
+                data-value="original"
+              >
+                <span class="patch__led"></span>Orijinal
+              </button>
+              <button type="button" class="patch" data-value="1920x1080">
+                <span class="patch__led"></span>1080p
+              </button>
+              <button type="button" class="patch" data-value="1280x720">
+                <span class="patch__led"></span>720p
+              </button>
+              <button type="button" class="patch" data-value="854x480">
+                <span class="patch__led"></span>480p
+              </button>
+            </div>
+            <input
+              type="hidden"
+              id="resolution"
+              name="resolution"
+              value="original"
+            />
+          </section>
+          <section>
+            <div class="module__label">
+              <span class="module__num">OUT</span>Çıkış Formatı
+            </div>
+            <div class="patchbay" id="patchbay">
+              <button type="button" class="patch is-active" data-value="mp3">
+                <span class="patch__led"></span>MP3
+              </button>
+              <button type="button" class="patch" data-value="wav">
+                <span class="patch__led"></span>WAV
+              </button>
+              <button type="button" class="patch" data-value="avi">
+                <span class="patch__led"></span>AVI
+              </button>
+              <button type="button" class="patch" data-value="mp4">
+                <span class="patch__led"></span>MP4
+              </button>
+              <button type="button" class="patch" data-value="gif">
+                <span class="patch__led"></span>GIF
+              </button>
+              <button type="button" class="patch" data-value="webm">
+                <span class="patch__led"></span>WebM
+              </button>
+              <button type="button" class="patch" data-value="mute">
+                <span class="patch__led"></span>Sessiz
+              </button>
+              <button type="button" class="patch" data-value="thumbnail">
+                <span class="patch__led"></span>Kapak
+              </button>
+              <button type="button" class="patch" data-value="resize">
+                <span class="patch__led"></span>720p
+              </button>
+              <button type="button" class="patch" data-value="trim">
+                <span class="patch__led"></span>İlk 10sn
+              </button>
+              <button type="button" class="patch" data-value="fast">
+                <span class="patch__led"></span>2x Hız
+              </button>
+              <button type="button" class="patch" data-value="watermark">
+                <span class="patch__led"></span>Filigran
+              </button>
+            </div>
+            <input
+              type="hidden"
+              id="format"
+              name="format"
+              value="mp3"
+              required
+            />
+          </section>
+
+          <section>
+            <div class="module__label">
+              <span class="module__num">REC</span>İşlem
+            </div>
+            <div class="scope is-idle" id="scope">
+              <div class="scope__grid"></div>
+              <svg
+                class="scope__wave"
+                viewBox="0 0 600 60"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M0,30 L15,30 L22,10 L30,50 L38,15 L46,45 L54,25 L62,30 L80,30 L95,30 L102,8 L110,52 L118,12 L126,48 L134,24 L142,30 L160,30 L300,30 L315,30 L322,10 L330,50 L338,15 L346,45 L354,25 L362,30 L380,30 L395,30 L402,8 L410,52 L418,12 L426,48 L434,24 L442,30 L460,30 L600,30"
+                />
+              </svg>
+              <div class="scope__scan"></div>
+              <div class="scope__readout" id="progressText">
+                SİNYAL BEKLENİYOR
+              </div>
+            </div>
+
+            <div class="vu" id="progressContainer" style="margin-top: 10px">
+              <div class="vu__fill" id="progressBar"></div>
+              <div class="vu__ticks">
+                <span></span><span></span><span></span><span></span
+                ><span></span> <span></span><span></span><span></span
+                ><span></span><span></span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              id="submitBtn"
+              class="recbtn"
+              style="margin-top: 16px"
+            >
+              <span class="recbtn__dot"></span>Dönüştür
+            </button>
+          </section>
+        </form>
+
+        <div id="message" class="message"></div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      socket.on("connected", (id) => {
+        document.getElementById("socketId").value = id;
+      });
+
+      const patchbay = document.getElementById("patchbay");
+      const formatInput = document.getElementById("format");
+      patchbay.addEventListener("click", (e) => {
+        const btn = e.target.closest(".patch");
+        if (!btn) return;
+        patchbay
+          .querySelectorAll(".patch")
+          .forEach((p) => p.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        formatInput.value = btn.dataset.value;
+      });
+      const resPatchbay = document.getElementById("resPatchbay");
+      const resInput = document.getElementById("resolution");
+      resPatchbay.addEventListener("click", (e) => {
+        const btn = e.target.closest(".patch");
+        if (!btn) return;
+        resPatchbay
+          .querySelectorAll(".patch")
+          .forEach((p) => p.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        resInput.value = btn.dataset.value;
+      });
+      const dropzone = document.getElementById("dropzone");
+      const videoFile = document.getElementById("videoFile");
+      const dropzoneText = document.getElementById("dropzoneText");
+
+      function showFileName(file) {
+        if (!file) return;
+        dropzoneText.textContent = file.name;
+        dropzoneText.classList.add("is-file");
+        dropzone.classList.add("has-file");
+      }
+      videoFile.addEventListener("change", () =>
+        showFileName(videoFile.files[0]),
+      );
+      ["dragenter", "dragover"].forEach((evt) =>
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          dropzone.classList.add("is-drag");
+        }),
+      );
+      ["dragleave", "drop"].forEach((evt) =>
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove("is-drag");
+        }),
+      );
+      dropzone.addEventListener("drop", (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          videoFile.files = e.dataTransfer.files;
+          showFileName(file);
+        }
+      });
+      dropzone.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          videoFile.click();
+        }
+      });
+
+      const form = document.getElementById("uploadForm");
+      const messageDiv = document.getElementById("message");
+      const submitBtn = document.getElementById("submitBtn");
+      const progressContainer = document.getElementById("progressContainer");
+      const progressBar = document.getElementById("progressBar");
+      const progressText = document.getElementById("progressText");
+      const scope = document.getElementById("scope");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="recbtn__dot"></span>Yükleniyor...';
+        messageDiv.innerHTML = "";
+        progressContainer.style.display = "none";
+        progressBar.style.width = "0%";
+        scope.className = "scope is-idle";
+        progressText.className = "scope__readout";
+        progressText.textContent = "SİNYAL BEKLENİYOR";
+
+        try {
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: new FormData(form),
+          });
+
+          if (!response.ok) {
+            const result = await response.json();
+            messageDiv.innerHTML = `<span class="err">Hata: ${result.error}</span>`;
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="recbtn__dot"></span>Dönüştür';
+          }
+        } catch (error) {
+          messageDiv.innerHTML =
+            '<span class="err">Sunucu ile iletişim kurulamadı.</span>';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span class="recbtn__dot"></span>Dönüştür';
+        }
+      });
+
+      socket.on("status", (data) => {
+        progressContainer.style.display = "block";
+
+        if (data.status === "pending") {
+          submitBtn.innerHTML = '<span class="recbtn__dot"></span>Kuyrukta...';
+          messageDiv.innerHTML =
+            '<span class="warn">Sunucu dolu — sıranız gelince işlem başlayacak.</span>';
+          scope.className = "scope is-idle";
+          progressText.className = "scope__readout";
+          progressText.textContent = "KUYRUKTA BEKLİYOR";
+          progressBar.style.width = "0%";
+        } else if (data.status === "processing") {
+          submitBtn.innerHTML =
+            '<span class="recbtn__dot"></span>Dönüştürülüyor...';
+          messageDiv.innerHTML = "";
+          scope.className = "scope is-processing";
+          progressText.className = "scope__readout is-processing";
+          progressText.textContent = `SİNYAL İŞLENİYOR — %${data.progress}`;
+          progressBar.style.width = `${data.progress}%`;
+        } else if (data.status === "completed") {
+          scope.className = "scope is-idle";
+          progressText.className = "scope__readout";
+          progressText.textContent = "TAMAMLANDI — %100";
+          progressBar.style.width = "100%";
+          messageDiv.innerHTML = `<span class="ok">Dönüştürme tamam.</span> <a href="/download/${data.id}">Kaseti çıkar ↴</a>`;
+
+          form.reset();
+          dropzoneText.textContent = "Dosyayı sürükleyin ya da ";
+          dropzoneText.classList.remove("is-file");
+          const link = document.createElement("span");
+          link.className = "link";
+          link.textContent = "seçin";
+          dropzoneText.appendChild(link);
+          dropzone.classList.remove("has-file");
+          patchbay
+            .querySelectorAll(".patch")
+            .forEach((p) => p.classList.remove("is-active"));
+          patchbay
+            .querySelector('[data-value="mp3"]')
+            .classList.add("is-active");
+          formatInput.value = "mp3";
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span class="recbtn__dot"></span>Dönüştür';
+        } else if (data.status === "error") {
+          scope.className = "scope is-idle";
+          progressText.className = "scope__readout is-error";
+          progressText.textContent = "HATA";
+          messageDiv.innerHTML =
+            '<span class="err">Dönüştürme sırasında hata oluştu. Lütfen geçerli bir dosya seçin.</span>';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span class="recbtn__dot"></span>Dönüştür';
+        }
+      });
+    </script>
+  </body>
+</html>

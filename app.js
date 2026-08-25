@@ -140,7 +140,7 @@ app.post("/upload", upload.single("video"), async (req, res) => {
 
   try {
     const [result] = await db.query(
-      "INSERT INTO videos (filename, original_name, status) VALUES (?, ?, ?)",
+      "INSERT INTO videos (filename, originalname, status) VALUES (?, ?, ?)",
       [filename, originalName, "pending"],
     );
 

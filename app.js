@@ -134,13 +134,14 @@ app.post("/upload", upload.single("video"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Dosya yuklenmedi" });
 
   const { format, resolution, socketId } = req.body;
+  const filename = req.file.filename;
   const originalName = req.file.originalname;
   const outputFilename = `${Date.now()}-converted.${format}`;
 
   try {
     const [result] = await db.query(
-      "INSERT INTO videos (original_name, status) VALUES (?, ?)",
-      [originalName, "pending"],
+      "INSERT INTO videos (filename, original_name, status) VALUES (?, ?, ?)",
+      [filename, originalName, "pending"],
     );
 
     conversionQueue.push({

@@ -19,7 +19,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 const port = process.env.PORT || 3000;
 
-app.use(helmet()); // Güvenlik katmanı
+app.use(helmet({ contentSecurityPolicy: false }));
 
 const conversionQueue = [];
 let isProcessing = false;

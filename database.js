@@ -10,5 +10,26 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
+const initDatabase = () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS videos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL,
+      originalname VARCHAR(255) NOT NULL,
+      status VARCHAR(50) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  pool.query(createTableQuery, (err) => {
+    if (err) {
+      console.error("Tablo oluşturulamadı:", err);
+    } else {
+      console.log("MySQL 'videos' tablosu hazır.");
+    }
+  });
+};
+
+initDatabase();
 
 module.exports = pool.promise();

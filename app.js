@@ -1,8 +1,10 @@
+// 1. ADIM: Çevre değişkenleri EN ÜSTTE yüklenmeli!
+const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const dotenv = require("dotenv");
-dotenv.config();
 const path = require("path");
 const multer = require("multer");
 const ffmpeg = require("fluent-ffmpeg");
@@ -18,11 +20,20 @@ const server = http.createServer(app);
 const io = new Server(server);
 const port = process.env.PORT || 3000;
 
+// 2. ADIM: Gerekli klasörlerin var olduğundan emin ol (Yoksa otomatik oluşturur)
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads", { recursive: true });
+}
+if (!fs.existsSync("converted")) {
+  fs.mkdirSync("converted", { recursive: true });
+}
+
 app.use(helmet({ contentSecurityPolicy: false }));
 
 const conversionQueue = [];
 let isProcessing = false;
 
+// 3. ADIM: Multer ile dosya kaydetme ayarları
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) => {
@@ -52,6 +63,7 @@ io.on("connection", (socket) => {
   socket.emit("connected", socket.id);
 });
 
+// 4. ADIM: Kuyruk ve Dönüştürme Mantığı
 const processNextInQueue = async () => {
   if (isProcessing || conversionQueue.length === 0) return;
 
@@ -129,14 +141,31 @@ const processNextInQueue = async () => {
   converterFunction(command, task.outputPath);
 };
 
+// 5. ADIM: Doğru uzantı eşleştirici fonksiyon
+const getFileExtension = (fmt) => {
+  switch (fmt) {
+    case "thumbnail":
+      return "jpg";
+    case "fast":
+    case "mute":
+    case "resize":
+    case "trim":
+    case "watermark":
+      return "mp4";
+    default:
+      return fmt; // avi, gif, mp3, wav, webm için kendi isimlerini kullan
+  }
+};
+
 app.post("/upload", upload.single("video"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Dosya yuklenmedi" });
 
   const { format, resolution, socketId } = req.body;
   const filename = req.file.filename;
   const originalName = req.file.originalname;
-  const fileExtension = format === "thumbnail" ? "jpg" : format;
-  const outputFilename = `${Date.now()}-converted.${fileExtension}`;
+
+  const extension = getFileExtension(format);
+  const outputFilename = `${Date.now()}-converted.${extension}`;
 
   try {
     const [result] = await db.query(
@@ -181,7 +210,7 @@ app.get("/download/:id", async (req, res) => {
   }
 });
 
-// Multer (Büyük Dosya) ve Genel Hata Yakalayıcı Middleware
+// 6. ADIM: Hata Yakalayıcı Middleware
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {

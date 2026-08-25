@@ -890,5 +890,105 @@
         }
       });
     </script>
+    <!-- Retro Kullanım Rehberi Paneli -->
+    <style>
+      .info-panel {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        width: 260px;
+        background: var(--panel);
+        border: 1px solid var(--phosphor);
+        border-radius: 8px;
+        padding: 18px;
+        box-shadow:
+          0 4px 16px rgba(0, 0, 0, 0.6),
+          inset 0 0 8px rgba(255, 180, 84, 0.1);
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        line-height: 1.6;
+        z-index: 100;
+        opacity: 0.95;
+        animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(120%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 0.95;
+        }
+      }
+      .info-panel h3 {
+        margin: 0 0 12px 0;
+        color: var(--phosphor);
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px dashed rgba(255, 180, 84, 0.3);
+        padding-bottom: 6px;
+      }
+      .info-panel ul {
+        padding-left: 14px;
+        margin: 0;
+      }
+      .info-panel li {
+        margin-bottom: 10px;
+      }
+      .info-panel .highlight {
+        color: var(--signal);
+        font-weight: bold;
+      }
+      .info-panel .close-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        cursor: pointer;
+        color: var(--text-faint);
+        background: none;
+        border: none;
+        font-weight: bold;
+        font-size: 14px;
+        transition: color 0.2s;
+      }
+      .info-panel .close-btn:hover {
+        color: var(--rec-hi);
+      }
+      @media (max-width: 768px) {
+        .info-panel {
+          display: none;
+        } /* Mobilde yer kaplamaması için gizle */
+      }
+    </style>
+    <div class="info-panel" id="infoPanel">
+      <button
+        class="close-btn"
+        onclick="document.getElementById('infoPanel').style.display = 'none'"
+      >
+        X
+      </button>
+      <h3>Kullanım Rehberi</h3>
+      <ul>
+        <li>
+          <span class="highlight">1.</span> <b>IN</b> bölümünden dönüştürülecek
+          videoyu seçin.
+        </li>
+        <li>
+          <span class="highlight">2.</span> Boyutu küçültmek isterseniz
+          <b>RES</b> bölümünden çözünürlük düşürün.
+        </li>
+        <li>
+          <span class="highlight">3.</span> <b>OUT</b> panelinden hedef formatı
+          seçin.
+        </li>
+        <li>
+          <span class="highlight">4.</span> Dönüştür tuşuna basın ve işlemin
+          bitmesini bekleyin.
+        </li>
+      </ul>
+    </div>
   </body>
 </html>

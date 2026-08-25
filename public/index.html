@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sinyal Dönüştürücü — VC-8</title>
+    <title>Video Dönüştürücü</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
@@ -574,7 +574,7 @@
 
       <div class="unit__inner">
         <div class="nameplate">
-          <span class="nameplate__brand"><b>SİNYAL</b> DÖNÜŞTÜRME ÜNİTESİ</span>
+          <span class="nameplate__brand"><b>VİDEO</b> DÖNÜŞTÜRME ÜNİTESİ</span>
           <span class="nameplate__model"
             ><span class="power-led"></span>MODEL VC-8</span
           >
@@ -698,7 +698,7 @@
               </svg>
               <div class="scope__scan"></div>
               <div class="scope__readout" id="progressText">
-                SİNYAL BEKLENİYOR...
+                VİDEO BEKLENİYOR...
               </div>
             </div>
 
@@ -813,7 +813,7 @@
         progressBar.style.width = "0%";
         scope.className = "scope is-idle";
         progressText.className = "scope__readout";
-        progressText.textContent = "SİNYAL BEKLENİYOR";
+        progressText.textContent = "VİDEO BEKLENİYOR";
 
         try {
           const response = await fetch("/upload", {
@@ -852,7 +852,7 @@
           messageDiv.innerHTML = "";
           scope.className = "scope is-processing";
           progressText.className = "scope__readout is-processing";
-          progressText.textContent = `SİNYAL İŞLENİYOR — %${data.progress}`;
+          progressText.textContent = `VİDEO İŞLENİYOR — %${data.progress}`;
           progressBar.style.width = `${data.progress}%`;
         } else if (data.status === "completed") {
           scope.className = "scope is-idle";
